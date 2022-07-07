@@ -16,6 +16,8 @@ A T140 packet, similar to an RTP packet, includes 2 parts:
 
 <mark>NOTE</mark> In this implementation, even `text/t140` is being considered as a type of "codec", this format does not require any further header and depends solely on the RTP header (specified in [RFC3550](https://datatracker.ietf.org/doc/html/rfc3550) with the constraints in section 2.1). The structure of this implementation may differ from the implementation in [pion/rtp/codecs](https://github.com/pion/rtp/tree/master/codecs) for this reason. For example, the `T140Packet` will be a special type embedded the `Packet` and the payload of `T140Packet` will be processed according to the `PT` field in the header (with redundancy-`RED` or an ordinary packet-`T140`).
 
+<mark>NOTE</mark> A T140 packet is an RTP packet, but an RTP packet is not guaranteed to satisfy T140 packet's standardization.
+
 Examples for a packet:
 
 Non-padding packet with valid byte-slice form on the right
@@ -102,6 +104,6 @@ There is no further instruction for the payload. The payload length is variable 
 
 ## 3. Implementation
 All components in this package is referenced from the [pion/rtp](https://github.com/pion/rtp) and [webrtc/pkg/media/](https://github.com/pion/webrtc/tree/master/pkg/media):
-- [ ]`t140Packet.go`
+- [ ] `t140Packet.go`
 - [ ] `t140Reader.go`
 - [ ] `t140Writer.go`

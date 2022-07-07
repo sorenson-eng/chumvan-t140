@@ -1,8 +1,9 @@
 // Package t140packet implements a T140 (text/t140) packet from RFC-4103
 package t140packet
 
-// T140Packet represents a T140  in an RTP packet
+// T140Packet represents a T140 packet as a form of RTP packet
 type T140Packet struct {
+	IsRED     bool
 	T140block []byte
 }
 
