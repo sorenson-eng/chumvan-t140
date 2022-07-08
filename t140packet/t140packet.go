@@ -13,10 +13,11 @@ const (
 	rHeaderMask    = 0x08
 	ptMask         = 0x7F
 
-	timeOffsetOffset = 1
-	timeOffsetShift  = 2
-	timeOffsetMask   = 0x3FFF
-	timeOffsetSize   = 2 // 14 bit
+	timeOffsetShift = 2
+	timeOffsetSize  = 2 // 14 bit
+
+	rBlockLengthMask = 0x03FF
+	rBlockLengthSize = 2 // 10 bit
 )
 
 // T140Packet represents a T140 packet as a form of RTP packet.
@@ -27,10 +28,10 @@ type T140Packet struct {
 	IsRED  bool
 
 	// RED
-	RHeader []RBlockHeader
+	RHeaders []RBlockHeader
 
-	PBlock []byte
-	RBlock []byte
+	PBlock  []byte
+	RBlocks []RBlock
 }
 
 type RBlockHeader struct {
@@ -39,10 +40,15 @@ type RBlockHeader struct {
 	BlockLength     uint16
 }
 
+type RBlock struct {
+	PayloadType uint8
+	Data        []byte
+}
+
 // Unmarshal parses the passed in byte slice
 // and stores the result in the T140Packet this method is called upon.
 // Returns any occurred error
-func (t *T140Packet) Unmarshal(buf []byte, codeRED uint8) (pBlock []byte, rBlock []byte, err error) {
+func (t *T140Packet) Unmarshal(buf []byte, codeRED uint8) (pBlock []byte, rBlock []RBlock, err error) {
 	rtpPacket := &rtp.Packet{}
 	err = rtpPacket.Unmarshal(buf)
 	if err != nil {
@@ -69,7 +75,7 @@ func (t *T140Packet) Unmarshal(buf []byte, codeRED uint8) (pBlock []byte, rBlock
 		t.IsRED = true
 	}
 
-	err = t.UnmarshalBlock(rtpPacket.Payload)
+	err = t.UnmarshalPayload(rtpPacket.Payload)
 	if err != nil {
 		return
 	}
@@ -80,7 +86,7 @@ func (t *T140Packet) Unmarshal(buf []byte, codeRED uint8) (pBlock []byte, rBlock
 // UnmarshalBlock parses the passed in byte slice
 // and stores the block(s) in the T140Packet this method is called upon.
 // Returns any occurred error.
-func (t *T140Packet) UnmarshalBlock(payload []byte) (err error) {
+func (t *T140Packet) UnmarshalPayload(payload []byte) (err error) {
 	// Payload of T140 packet can be empty
 	if len(payload) == 0 {
 		return
@@ -97,7 +103,17 @@ func (t *T140Packet) UnmarshalBlock(payload []byte) (err error) {
 	}
 
 	for i := 0; i <= rCount; i++ {
-		payload[i*rHeaderSize]
+		err = t.UnmarshalRHeader(payload[i*rHeaderSize : (i+1)*rHeaderSize])
+		if err != nil {
+			return
+		}
+	}
+
+	// TODO UnmarshalBlocks
+	// TODO Test UnmarshalBlocks
+	err = t.unmarshalBlocks(payload)
+	if err != nil {
+		return
 	}
 
 	return
@@ -121,6 +137,9 @@ func CountREDHeaders(payload []byte) (count int, err error) {
 	return
 }
 
+// UnmarshalRHeader parses the passed in byte slice (4 bytes)
+// and stores parsed header into the T140 packet this method is called upon.
+// Returns any occurred error
 func (t *T140Packet) UnmarshalRHeader(buf []byte) (err error) {
 	if len(buf) != 4 {
 		return errMismatchRHeaderSize
@@ -130,5 +149,43 @@ func (t *T140Packet) UnmarshalRHeader(buf []byte) (err error) {
 	}
 	rHeader := &RBlockHeader{}
 	rHeader.PayloadType = buf[0] & ptMask
-	rHeader.TimestampOffset = binary.BigEndian.Uint16(buf[timeOffsetOffset : timeOffsetOffset+tim])
+	rHeader.TimestampOffset = binary.BigEndian.Uint16(buf[1:1+timeOffsetSize]) >> timeOffsetShift
+	rHeader.BlockLength = binary.BigEndian.Uint16(buf[2:]) & uint16(rBlockLengthMask)
+
+	t.RHeaders = append(t.RHeaders, *rHeader)
+	return
+}
+
+// redundantLength returns the length (in bytes) of redundancy-related part in the payload
+func (t *T140Packet) redundantLength() (rLength int) {
+	rLength = len(t.RHeaders) * rHeaderSize
+	for _, r := range t.RHeaders {
+		if r.BlockLength != 0 {
+			rLength += int(1 /* 0 + T140 PT */ + r.BlockLength)
+		}
+	}
+	return
+}
+
+// unmarshalBlocks parses the passed in byte slice
+// and stores the "R" block and "P" block in the T140 packet
+// this method is called upon.
+// Returns any occurred error
+func (t *T140Packet) unmarshalBlocks(payload []byte) (err error) {
+	var rLen int = len(t.RHeaders) * rHeaderSize
+	for _, r := range t.RHeaders {
+		if r.BlockLength != 0 {
+			rb := RBlock{
+				PayloadType: r.PayloadType,
+				Data:        payload[rLen+1 : rLen+1+int(r.BlockLength)],
+			}
+			// TODO copy to make sure data persists
+			t.RBlocks = append(t.RBlocks, rb)
+			rLen += int(1 + r.BlockLength)
+		}
+	}
+
+	// TODO change to copy
+	t.PBlock = payload[rLen:]
+	return
 }
