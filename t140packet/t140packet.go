@@ -92,11 +92,6 @@ func (t *T140Packet) UnmarshalPayload(payload []byte) (err error) {
 		return
 	}
 
-	if !t.IsRED {
-		t.PBlock = payload
-		return
-	}
-
 	rCount, err := CountREDHeaders(payload)
 	if err != nil {
 		return
@@ -109,8 +104,6 @@ func (t *T140Packet) UnmarshalPayload(payload []byte) (err error) {
 		}
 	}
 
-	// TODO UnmarshalBlocks
-	// TODO Test UnmarshalBlocks
 	err = t.unmarshalBlocks(payload)
 	if err != nil {
 		return
@@ -156,22 +149,16 @@ func (t *T140Packet) UnmarshalRHeader(buf []byte) (err error) {
 	return
 }
 
-// redundantLength returns the length (in bytes) of redundancy-related part in the payload
-func (t *T140Packet) redundantLength() (rLength int) {
-	rLength = len(t.RHeaders) * rHeaderSize
-	for _, r := range t.RHeaders {
-		if r.BlockLength != 0 {
-			rLength += int(1 /* 0 + T140 PT */ + r.BlockLength)
-		}
-	}
-	return
-}
-
 // unmarshalBlocks parses the passed in byte slice
 // and stores the "R" block and "P" block in the T140 packet
 // this method is called upon.
 // Returns any occurred error
 func (t *T140Packet) unmarshalBlocks(payload []byte) (err error) {
+	if !t.IsRED {
+		t.PBlock = payload
+		return
+	}
+
 	var rLen int = len(t.RHeaders) * rHeaderSize
 	for _, r := range t.RHeaders {
 		if r.BlockLength != 0 {
@@ -179,13 +166,11 @@ func (t *T140Packet) unmarshalBlocks(payload []byte) (err error) {
 				PayloadType: r.PayloadType,
 				Data:        payload[rLen+1 : rLen+1+int(r.BlockLength)],
 			}
-			// TODO copy to make sure data persists
 			t.RBlocks = append(t.RBlocks, rb)
 			rLen += int(1 + r.BlockLength)
 		}
 	}
 
-	// TODO change to copy
 	t.PBlock = payload[rLen:]
 	return
 }
