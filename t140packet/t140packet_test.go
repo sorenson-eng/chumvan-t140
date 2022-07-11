@@ -48,10 +48,36 @@ func TestCountREDHeader(t *testing.T) {
 	}
 }
 
-// func TestUnmarshalRHeader(t *testing.T) {
-// 	t140 := &T140Packet{}
-// 	// 11100101111111110000000000100000 -> 0xE5, 0xFF, 0x00, 0x20
-// 	rawPacket := []byte{
+func TestUnmarshalRHeaders(t *testing.T) {
+	t140 := &T140Packet{}
+	// 11100101 11111111 00000000 00001010
+	payload := []byte{
+		0xE5, 0xFF, 0x00, 0x0A, // RHeader
+		0x65,                                                       // 0-flag and T140 PT
+		0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, // "R" data
+		0x01, 0x02, 0x03, 0x04, // "P" data
+	}
+	err := t140.UnmarshalRHeaders(payload)
+	if err != nil {
+		t.Error(err)
+	}
 
-// 	}
-// }
+	// multiple (2) RHeaders
+	t140 = &T140Packet{}
+	payload = []byte{
+		0xE5, 0xFF, 0x00, 0x0A, // RHeader
+		0xE5, 0xFF, 0x00, 0x0A, // RHeader
+		0x65,                                                       // 0-flag and T140 PT
+		0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, // "R" data
+		0x65,                                                       // 0-flag and T140 PT
+		0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, // "R" data
+		0x01, 0x02, 0x03, 0x04, // "P" data
+	}
+	err = t140.UnmarshalRHeaders(payload)
+	if err != nil {
+		t.Error(err)
+	}
+	if len(t140.RHeaders) != 2 {
+		t.Errorf("TestUnmarshalRHeaders wrong number of RHeaders return: got %d, but want: %d", len(t140.RHeaders), 2)
+	}
+}

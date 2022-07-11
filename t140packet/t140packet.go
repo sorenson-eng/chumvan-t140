@@ -10,7 +10,7 @@ import (
 const (
 	payloadMaxSize = 512
 	rHeaderSize    = 4 // byte
-	rHeaderMask    = 0x08
+	rHeaderMask    = 0x80
 	ptMask         = 0x7F
 
 	timeOffsetShift = 2
@@ -121,7 +121,7 @@ func CountREDHeaders(payload []byte) (count int, err error) {
 	// TODO check out of order RHeaders
 	rowCount := len(payload) / rHeaderSize
 	for i := 0; i <= rowCount; i++ {
-		if payload[i*rHeaderSize]&rHeaderMask == 0x08 {
+		if payload[i*rHeaderSize]&rHeaderMask == 0x80 {
 			count++
 		} else {
 			return
@@ -140,7 +140,7 @@ func (t *T140Packet) UnmarshalRHeaders(payload []byte) (err error) {
 		return err
 	}
 
-	for i := 0; i <= rCount; i++ {
+	for i := 0; i < rCount; i++ {
 		buf := make([]byte, rHeaderSize)
 		copy(buf, payload[i*rHeaderSize:(i+1)*rHeaderSize])
 		if buf[0]&rHeaderMask == 0 {

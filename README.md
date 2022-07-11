@@ -71,9 +71,9 @@ A text/t140 packet with one redundant T140block
 |           synchronization source (SSRC) identifier            |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 |1|   T140 PT   |  timestamp offset of "R"  | "R" block length  |
-|1| 1100101(100)|           16320           |    32             | -> 0xE5, 0xFF, 0x00, 0x20
+|1| 1100101(100)|           16320           |    10             | -> 0xE5, 0xFF, 0x00, 0x0a
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|0|   T140 PT   | "R" T.140 encoded redundant data              |
+|0|   T140 PT   | "R" T.140 encoded redundant data              | -> 0x65, 
 +-+-+-+-+-+-+-+-+                               +---------------+
 +                                               |               |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+     +-+-+-+-+-+
