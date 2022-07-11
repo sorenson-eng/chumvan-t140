@@ -1,6 +1,7 @@
 package t140packet
 
 import (
+	"reflect"
 	"testing"
 )
 
@@ -44,7 +45,7 @@ func TestCountREDHeader(t *testing.T) {
 		if count == 5 {
 			t.Errorf("TestCountREDHeader: did not stop when meet the end of R-header list")
 		}
-		t.Errorf("TestCountREDHeader: wrong count value returned: got %#v, but want %#v", count, 3)
+		t.Errorf("TestCountREDHeader: wrong count value returned: got %#v, but expect %#v", count, 3)
 	}
 }
 
@@ -60,6 +61,17 @@ func TestUnmarshalRHeaders(t *testing.T) {
 	err := t140.UnmarshalRHeaders(payload)
 	if err != nil {
 		t.Error(err)
+	}
+
+	expectRHeader := RBlockHeader{
+		PayloadType:     101,
+		TimestampOffset: 16320,
+		BlockLength:     10,
+	}
+
+	firstRHeader := t140.RHeaders[0]
+	if !reflect.DeepEqual(firstRHeader, expectRHeader) {
+		t.Errorf("TestUnmarshalHeaders mismatch unmarshal RHeader: got %#v, but expect %#v", firstRHeader, expectRHeader)
 	}
 
 	// multiple (2) RHeaders
@@ -78,6 +90,22 @@ func TestUnmarshalRHeaders(t *testing.T) {
 		t.Error(err)
 	}
 	if len(t140.RHeaders) != 2 {
-		t.Errorf("TestUnmarshalRHeaders wrong number of RHeaders return: got %d, but want: %d", len(t140.RHeaders), 2)
+		t.Errorf("TestUnmarshalRHeaders wrong number of RHeaders return: got %d, but expect: %d", len(t140.RHeaders), 2)
+	}
+
+	expectRHeaders := []RBlockHeader{
+		{
+			PayloadType:     101,
+			TimestampOffset: 16320,
+			BlockLength:     10,
+		},
+		{
+			PayloadType:     101,
+			TimestampOffset: 16320,
+			BlockLength:     10,
+		},
+	}
+	if !reflect.DeepEqual(t140.RHeaders, expectRHeaders) {
+		t.Errorf("TestUnmarshalHeaders mismatch unmarshal RHeader: got %#v, but expect %#v", firstRHeader, expectRHeader)
 	}
 }
