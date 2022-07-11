@@ -9,15 +9,15 @@ import (
 
 const (
 	payloadMaxSize = 512
-	rHeaderSize    = 4
+	rHeaderSize    = 2 // byte
 	rHeaderMask    = 0x08
 	ptMask         = 0x7F
 
-	timeOffsetShift = 2
-	timeOffsetSize  = 2 // 14 bit
+	timeOffsetShift = 1
+	timeOffsetSize  = 1 // 14-bit
 
 	rBlockLengthMask = 0x03FF
-	rBlockLengthSize = 2 // 10 bit
+	rBlockLengthSize = 1 // 10-bit
 )
 
 // T140Packet represents a T140 packet as a form of RTP packet.
@@ -125,11 +125,13 @@ func CountREDHeaders(payload []byte) (count int, err error) {
 		err = errInvalidREDHeader
 		return
 	}
-
+	// TODO check out of order R-Header
 	rowCount := len(payload) / rHeaderSize
 	for i := 0; i <= rowCount; i++ {
-		if payload[i*rHeaderSize]&rHeaderMask == 1 {
+		if payload[i*rHeaderSize]&rHeaderMask == 0x08 {
 			count++
+		} else {
+			return
 		}
 	}
 
