@@ -87,13 +87,14 @@ func (t *T140Packet) Unmarshal(buf []byte, codeRED uint8) (pBlock []byte, rBlock
 // and stores the block(s) in the T140Packet this method is called upon.
 // Returns any occurred error.
 func (t *T140Packet) UnmarshalPayload(payload []byte) (err error) {
-	// Payload of T140 packet can be empty
-	if len(payload) == 0 {
-		return
-	}
 	// Simple return if only P-block is in a payload
 	if !t.IsRED {
 		t.PBlock = payload
+		return
+	}
+
+	// Payload of T140 packet can be empty
+	if len(payload) == 0 {
 		return
 	}
 
