@@ -3,6 +3,7 @@ package t140packet
 
 import (
 	"encoding/binary"
+	"fmt"
 
 	"github.com/pion/rtp"
 )
@@ -48,7 +49,7 @@ type RBlock struct {
 // Unmarshal parses the passed in byte slice
 // and stores the result in the T140Packet this method is called upon.
 // Returns any occurred error
-func (t *T140Packet) Unmarshal(buf []byte, codeRED uint8) (pBlock []byte, rBlock []RBlock, err error) {
+func (t *T140Packet) Unmarshal(buf []byte, redPT uint8) (pBlock []byte, rBlock []RBlock, err error) {
 	rtpPacket := &rtp.Packet{}
 	err = rtpPacket.Unmarshal(buf)
 	if err != nil {
@@ -60,7 +61,7 @@ func (t *T140Packet) Unmarshal(buf []byte, codeRED uint8) (pBlock []byte, rBlock
 		err = errNoExtensionAllowed
 		return
 	}
-	if rtpPacket.Header.CSRC != nil {
+	if len(rtpPacket.Header.CSRC) != 0 {
 		err = errNoCSRCAllowed
 		return
 	}
@@ -71,7 +72,7 @@ func (t *T140Packet) Unmarshal(buf []byte, codeRED uint8) (pBlock []byte, rBlock
 
 	// If redundancy is applied
 	t.Header = rtpPacket.Header
-	if t.Header.PayloadType == uint8(codeRED) {
+	if t.Header.PayloadType == redPT {
 		t.IsRED = true
 	}
 
@@ -140,6 +141,7 @@ func (t *T140Packet) UnmarshalRHeaders(payload []byte) (err error) {
 	if err != nil {
 		return err
 	}
+	fmt.Println("RED Header num = ", rCount)
 
 	for i := 0; i < rCount; i++ {
 		buf := make([]byte, rHeaderSize)
@@ -176,4 +178,17 @@ func (t *T140Packet) unmarshalBlocks(payload []byte) (err error) {
 
 	t.PBlock = payload[rLen:]
 	return
+}
+
+func (p T140Packet) String() string {
+	h := p.Header
+	s := "RTP T140 PACKET:\n"
+	s += fmt.Sprintf("\tVersion: %v\n", h.Version)
+	s += fmt.Sprintf("\tMarker: %v\n", h.Marker)
+	s += fmt.Sprintf("\tPayload Type: %d\n", h.PayloadType)
+	s += fmt.Sprintf("\tSequence Number: %d\n", h.SequenceNumber)
+	s += fmt.Sprintf("\tTimestamp: %d\n", h.Timestamp)
+	s += fmt.Sprintf("\tSSRC: %d (%x)\n", h.SSRC, h.SSRC)
+	s += fmt.Sprintf("\tCSRC: %v\n", h.CSRC)
+	return s
 }

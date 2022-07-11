@@ -3,13 +3,15 @@ package t140packet
 import (
 	"reflect"
 	"testing"
+
+	"github.com/pion/rtp"
 )
 
 func TestCountREDHeader(t *testing.T) {
 	// the 1st bit is non-zero
 	payload := []byte{0x00}
 	if _, err := CountREDHeaders(payload); err == nil {
-		t.Fatal("TestCountREDHeader: CountREDHeader did not return invalid RED header")
+		t.Fatal("TestCountREDHeader did not return invalid RED header")
 	}
 
 	// Right order of the 1st bit in R-Header
@@ -24,7 +26,7 @@ func TestCountREDHeader(t *testing.T) {
 		t.Error(err)
 	}
 	if count != 3 {
-		t.Errorf("TestCountREDHeader: wrong count value returned: got %#v, but want %#v", count, 3)
+		t.Errorf("TestCountREDHeader wrong count value returned: got %#v, but want %#v", count, 3)
 	}
 
 	// counting did not stop after the R-header list
@@ -43,9 +45,9 @@ func TestCountREDHeader(t *testing.T) {
 	}
 	if count != 3 {
 		if count == 5 {
-			t.Errorf("TestCountREDHeader: did not stop when meet the end of R-header list")
+			t.Errorf("TestCountREDHeader did not stop when meet the end of R-header list")
 		}
-		t.Errorf("TestCountREDHeader: wrong count value returned: got %#v, but expect %#v", count, 3)
+		t.Errorf("TestCountREDHeader wrong count value returned: got %#v, but expect %#v", count, 3)
 	}
 }
 
@@ -159,5 +161,82 @@ func TestUnmarshalBlocks(t *testing.T) {
 	}
 	if !reflect.DeepEqual(t140.RBlocks, RBlocks) {
 		t.Errorf("TestUnmarshalBlocks incorrect unmarshal R blocks: got %#v, but expect: %#v", t140.RBlocks, RBlocks)
+	}
+}
+
+func TestUnmarshal(t *testing.T) {
+	var redPT uint8 = 101
+	var t140PT uint8 = 100
+	// only P-block
+	t140 := &T140Packet{}
+	rawPacket := []byte{
+		0x80, 0xe4, 0x69, 0x8f,
+		0xd9, 0xc2, 0x93, 0xda,
+		0x1c, 0x64, 0x27, 0x82,
+		0x48, 0x65, 0x6c, 0x6c, 0x6f,
+	}
+
+	marshalPacket := &T140Packet{
+		Header: rtp.Header{
+			Version:        2,
+			Padding:        false,
+			Extension:      false,
+			Marker:         true,
+			PayloadType:    100,
+			SequenceNumber: 27023,
+			Timestamp:      3653407706,
+			SSRC:           476325762,
+			CSRC:           []uint32{},
+		},
+		PBlock: rawPacket[12:],
+	}
+	if _, _, err := t140.Unmarshal(rawPacket, redPT); err != nil {
+		t.Error(err)
+	} else if !reflect.DeepEqual(t140, marshalPacket) {
+		t.Errorf("TestUnmarshal incorrect unmarshal packet: got %#v, but expect %#v", t140, marshalPacket)
+	}
+
+	// with RBlocks
+	t140 = &T140Packet{}
+	rawPacket = []byte{
+		0x80, 0xe5, 0x69, 0x8f, //	---------
+		0xd9, 0xc2, 0x93, 0xda, // 	RTP Header
+		0x1c, 0x64, 0x27, 0x82, //	---------
+		0xe4, 0xff, 0x00, 0x0a, // "R" Block Header
+		0xe4, 0xff, 0x00, 0x0a, // "R" Block Header
+		0x64,                                                       // 0-flag and T140 PT
+		0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, // "R" data
+		0x64,                                                       // 0-flag and T140 PT
+		0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, // "R" data
+		0x48, 0x65, 0x6c, 0x6c, 0x6f, // "P" data
+	}
+	marshalPacket.Header.PayloadType = redPT
+	marshalPacket.IsRED = true
+	marshalPacket.RBlocks = []RBlock{
+		{
+			PayloadType: t140PT,
+			Data:        rawPacket[21:31],
+		},
+		{
+			PayloadType: t140PT,
+			Data:        rawPacket[32:42],
+		},
+	}
+	marshalPacket.RHeaders = []RBlockHeader{
+		{
+			PayloadType:     100,
+			TimestampOffset: 16320,
+			BlockLength:     10,
+		},
+		{
+			PayloadType:     100,
+			TimestampOffset: 16320,
+			BlockLength:     10,
+		},
+	}
+	if _, _, err := t140.Unmarshal(rawPacket, redPT); err != nil {
+		t.Error(err)
+	} else if !reflect.DeepEqual(t140, marshalPacket) {
+		t.Errorf("TestUnmarshal incorrect unmarshal packet: got %#v,\n but expect %#v", t140, marshalPacket)
 	}
 }
