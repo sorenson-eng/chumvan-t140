@@ -91,7 +91,13 @@ func (t *T140Packet) UnmarshalPayload(payload []byte) (err error) {
 	if len(payload) == 0 {
 		return
 	}
+	// Simple return if only P-block is in a payload
+	if !t.IsRED {
+		t.PBlock = payload
+		return
+	}
 
+	// Handle multi-blocks (with redundancy) in a payload
 	rCount, err := CountREDHeaders(payload)
 	if err != nil {
 		return
@@ -154,11 +160,6 @@ func (t *T140Packet) UnmarshalRHeader(buf []byte) (err error) {
 // this method is called upon.
 // Returns any occurred error
 func (t *T140Packet) unmarshalBlocks(payload []byte) (err error) {
-	if !t.IsRED {
-		t.PBlock = payload
-		return
-	}
-
 	var rLen int = len(t.RHeaders) * rHeaderSize
 	for _, r := range t.RHeaders {
 		if r.BlockLength != 0 {
