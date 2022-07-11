@@ -35,12 +35,16 @@ type T140Packet struct {
 	RBlocks []RBlock
 }
 
+// RBlockHeader represents a header according to an "R" block.
+// Includes: a payload type, a timestamp offset and a length for the "R" block
 type RBlockHeader struct {
 	PayloadType     uint8
 	TimestampOffset uint16
 	BlockLength     uint16
 }
 
+// RBlock represents an "R" block of UTF-8 data
+// Includes the T140 Payload Type and the actual redundant data - "R" block
 type RBlock struct {
 	PayloadType uint8
 	Data        []byte
@@ -141,7 +145,6 @@ func (t *T140Packet) UnmarshalRHeaders(payload []byte) (err error) {
 	if err != nil {
 		return err
 	}
-	fmt.Println("RED Header num = ", rCount)
 
 	for i := 0; i < rCount; i++ {
 		buf := make([]byte, rHeaderSize)
@@ -180,6 +183,7 @@ func (t *T140Packet) unmarshalBlocks(payload []byte) (err error) {
 	return
 }
 
+// String returns the string representation of the T140-payload RTP packet
 func (p T140Packet) String() string {
 	h := p.Header
 	s := "RTP T140 PACKET:\n"
