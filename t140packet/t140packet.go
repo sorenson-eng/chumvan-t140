@@ -98,16 +98,9 @@ func (t *T140Packet) UnmarshalPayload(payload []byte) (err error) {
 	}
 
 	// Handle multi-blocks (with redundancy) in a payload
-	rCount, err := CountREDHeaders(payload)
+	err = t.UnmarshalRHeaders(payload)
 	if err != nil {
 		return
-	}
-
-	for i := 0; i <= rCount; i++ {
-		err = t.UnmarshalRHeader(payload[i*rHeaderSize : (i+1)*rHeaderSize])
-		if err != nil {
-			return
-		}
 	}
 
 	err = t.unmarshalBlocks(payload)
@@ -138,22 +131,28 @@ func CountREDHeaders(payload []byte) (count int, err error) {
 	return
 }
 
-// UnmarshalRHeader parses the passed in byte slice (4 bytes)
-// and stores parsed header into the T140 packet this method is called upon.
+// UnmarshalRHeader parses the passed in byte slice
+// and stores parsed RHeaders into the T140 packet this method is called upon.
 // Returns any occurred error
-func (t *T140Packet) UnmarshalRHeader(buf []byte) (err error) {
-	if len(buf) != rHeaderSize {
-		return errMismatchRHeaderSize
+func (t *T140Packet) UnmarshalRHeaders(payload []byte) (err error) {
+	rCount, err := CountREDHeaders(payload)
+	if err != nil {
+		return err
 	}
-	if buf[0]&rHeaderMask == 0 {
-		return errInvalidREDHeader
-	}
-	rHeader := &RBlockHeader{}
-	rHeader.PayloadType = buf[0] & ptMask
-	rHeader.TimestampOffset = binary.BigEndian.Uint16(buf[1:1+timeOffsetSize]) >> timeOffsetShift
-	rHeader.BlockLength = binary.BigEndian.Uint16(buf[2:]) & uint16(rBlockLengthMask)
 
-	t.RHeaders = append(t.RHeaders, *rHeader)
+	for i := 0; i <= rCount; i++ {
+		buf := make([]byte, rHeaderSize)
+		copy(buf, payload[i*rHeaderSize:(i+1)*rHeaderSize])
+		if buf[0]&rHeaderMask == 0 {
+			return errInvalidREDHeader
+		}
+		rHeader := &RBlockHeader{}
+		rHeader.PayloadType = buf[0] & ptMask
+		rHeader.TimestampOffset = binary.BigEndian.Uint16(buf[1:1+timeOffsetSize]) >> timeOffsetShift
+		rHeader.BlockLength = binary.BigEndian.Uint16(buf[2:]) & uint16(rBlockLengthMask)
+
+		t.RHeaders = append(t.RHeaders, *rHeader)
+	}
 	return
 }
 
