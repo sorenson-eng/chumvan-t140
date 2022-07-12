@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	payloadMaxSize = 512
+	payloadMaxSize = 128
 	rHeaderSize    = 4 // byte
 	rHeaderMask    = 0x80
 	ptMask         = 0x7F
@@ -168,18 +168,22 @@ func (t *T140Packet) UnmarshalRHeaders(payload []byte) (err error) {
 // Returns any occurred error
 func (t *T140Packet) unmarshalBlocks(payload []byte) (err error) {
 	var rLen int = len(t.RHeaders) * rHeaderSize
+	rblocks := make([]RBlock, 0)
 	for _, r := range t.RHeaders {
 		if r.BlockLength != 0 {
 			rb := RBlock{
 				PayloadType: r.PayloadType,
 				Data:        payload[rLen+1 : rLen+1+int(r.BlockLength)],
 			}
-			t.RBlocks = append(t.RBlocks, rb)
+			rblocks = append(rblocks, rb)
 			rLen += int(1 + r.BlockLength)
 		}
 	}
+	t.RBlocks = make([]RBlock, len(t.RHeaders))
+	copy(t.RBlocks, rblocks)
 
-	t.PBlock = payload[rLen:]
+	t.PBlock = make([]byte, len(payload[rLen:]))
+	copy(t.PBlock, payload[rLen:])
 	return
 }
 
@@ -199,4 +203,18 @@ func (t T140Packet) String() string {
 	s += fmt.Sprintf("\tR-blocks quantity: %d\n", len(t.RBlocks))
 	s += fmt.Sprintf("\tR-blocks: %#v\n", t.RBlocks)
 	return s
+}
+
+//T140Payloader payloads T140 packets
+type T140Payloader struct{}
+
+func (p *T140Payloader) Payload(mtu uint16, payload []byte) (payloads [][]byte) {
+	if payload == nil {
+		return
+	}
+	out := make([]byte, len(payload))
+	copy(out, payload)
+	payloads = [][]byte{out}
+
+	return
 }
