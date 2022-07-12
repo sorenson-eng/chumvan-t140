@@ -184,8 +184,8 @@ func (t *T140Packet) unmarshalBlocks(payload []byte) (err error) {
 }
 
 // String returns the string representation of the T140-payload RTP packet
-func (p T140Packet) String() string {
-	h := p.Header
+func (t T140Packet) String() string {
+	h := t.Header
 	s := "RTP T140 PACKET:\n"
 	s += fmt.Sprintf("\tVersion: %v\n", h.Version)
 	s += fmt.Sprintf("\tMarker: %v\n", h.Marker)
@@ -194,5 +194,9 @@ func (p T140Packet) String() string {
 	s += fmt.Sprintf("\tTimestamp: %d\n", h.Timestamp)
 	s += fmt.Sprintf("\tSSRC: %d (%x)\n", h.SSRC, h.SSRC)
 	s += fmt.Sprintf("\tCSRC: %v\n", h.CSRC)
+	s += fmt.Sprintf("\tIs RED: %t\n", t.IsRED)
+	s += fmt.Sprintf("\tP-block length: %d bytes\n", len(t.PBlock))
+	s += fmt.Sprintf("\tR-blocks quantity: %d\n", len(t.RBlocks))
+	s += fmt.Sprintf("\tR-blocks: %#v\n", t.RBlocks)
 	return s
 }
