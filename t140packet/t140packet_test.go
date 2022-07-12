@@ -240,3 +240,38 @@ func TestUnmarshal(t *testing.T) {
 		t.Errorf("TestUnmarshal incorrect unmarshal packet: got %#v,\n but expect %#v", t140, marshalPacket)
 	}
 }
+
+func TestT140Payloader(t *testing.T) {
+	var mtu uint16 = 56
+
+	// empty-payload
+	payload := []byte{}
+	p := &T140Payloader{}
+	payloads, err := p.Payload(mtu, payload)
+	if len(payloads[0]) != 0 || err != nil {
+		t.Errorf("TestT140Payloader empty payload should result in empty list of payloads: got %#v of length %d", payloads, len(payloads))
+	}
+
+	// Oversize payload
+	oversize := 129
+	payload = make([]byte, oversize)
+	for i := 0; i < oversize; i++ {
+		payload[i] = 0x01
+	}
+	p = &T140Payloader{}
+	payloads, err = p.Payload(mtu, payload)
+	if payloads != nil || err != errTooLargePayload {
+		t.Errorf("TestT140Payloader oversize payload should return empty array and errTooLargePayload - error: got %v and %v", payloads, err)
+	}
+
+	// valid payload
+	payload = make([]byte, 128)
+	for i := range payload {
+		payload[i] = 0x01
+	}
+	p = &T140Payloader{}
+	payloads, err = p.Payload(mtu, payload)
+	if err != nil || !reflect.DeepEqual(payloads[0], payload) {
+		t.Errorf("TestT140Payloader max-size payload : got %#v of %T and %v\n, but want %#v of %T and %v", payloads[0], payloads[0], err, payload, payload, nil)
+	}
+}

@@ -208,10 +208,18 @@ func (t T140Packet) String() string {
 //T140Payloader payloads T140 packets
 type T140Payloader struct{}
 
-func (p *T140Payloader) Payload(mtu uint16, payload []byte) (payloads [][]byte) {
+// Payload fragments a packet across one or more byte array.
+// In T140 packet, each being sent data is constrained to 1 packet.
+// The operation still return a 2-dimensional byte slice to conform with the interface.
+func (p *T140Payloader) Payload(mtu uint16, payload []byte) (payloads [][]byte, err error) {
 	if payload == nil {
 		return
 	}
+
+	if len(payload) > payloadMaxSize {
+		return payloads, errTooLargePayload
+	}
+
 	out := make([]byte, len(payload))
 	copy(out, payload)
 	payloads = [][]byte{out}
