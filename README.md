@@ -106,6 +106,6 @@ Data (with or without redundancy) which is considered to be one sample, MUST fit
 
 ## 3. Implementation
 All components in this package is referenced from the [pion/rtp](https://github.com/pion/rtp) and [webrtc/pkg/media/](https://github.com/pion/webrtc/tree/master/pkg/media):
-- [ ] `t140Packet.go`
-- [ ] `t140Reader.go`
-- [ ] `t140Writer.go`
+- [x] `t140Packet.go`
+- [x] `t140Reader.go` → using [`pion/rtpio`](https://github.com/pion/rtpio)
+- [x] `t140Writer.go` → using [`pion/rtpio`](https://github.com/pion/rtpio)
