@@ -1,22 +1,16 @@
 package t140writer
 
 import (
-	"errors"
+	"io"
 
 	"github.com/pion/rtpio/pkg/rtpio"
 )
 
-type T140Writer struct {
+type T140Writer interface {
 	rtpio.RTPWriter
 }
 
 type T140WriteCloser interface {
-	T140Writer
-	Close() error
-}
-
-var errClose = errors.New("Close error")
-
-func (t *T140Writer) Close() error {
-	return errClose
+	rtpio.RTPWriter
+	io.Closer
 }
