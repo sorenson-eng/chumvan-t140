@@ -10,7 +10,6 @@ type T140Writer interface {
 	rtpio.RTPWriter
 }
 
-type T140WriteCloser interface {
-	rtpio.RTPWriter
-	io.Closer
+func NewT140Writer(w io.Writer) T140Writer {
+	return rtpio.NewRTPWriter(w)
 }
