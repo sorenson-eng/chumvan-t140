@@ -86,7 +86,7 @@ From the template of RTP header, the T140-specific setting can be listed as:
 - `X`: is always set to `0` which means no extension is allowed
 - `CC`: is always set to `000`
 - `CSRC`: due to `CC` = `000` the `CSRC` slice in the normal RTP has length 0
-- `PT`: is dynamic (range from 96 to 127) and agreed via other means (e.g SIP). In this implementation, `T140 PT` is chosen to be `1100100`(100) and `RED PT`(for redundancy) is chosen to be `1100101`(101)
+- `PT`: is dynamic (range from 96 to 127) and agreed via other means (e.g. SIP). In this implementation, `T140 PT` is chosen to be `1100100`(100) and `RED PT`(for redundancy) is chosen to be `1100101`(101)
 
 ### 2.2 T140 payload
 **The T140block**
@@ -102,7 +102,7 @@ From the template of RTP header, the T140-specific setting can be listed as:
 
 There is no further instruction for the payload. The payload length is variable between packets and is not determined by any means from the header.
 
-Data (with or without redundancy) which is considered to be one sample, MUST fits into one packet to maintain the real-time characteristic.Therefore, in this implementation, the maximum value of a payload in a T140 packet is chosen to be 128 bytes.
+Data (with or without redundancy) which is considered to be one sample, MUST fits into one packet to maintain the real-time characteristic. Therefore, in this implementation, the maximum value of a payload in a T140 packet is chosen to be 128 bytes.
 
 ## 3. Implementation
 All components in this package is referenced from the [pion/rtp](https://github.com/pion/rtp) and [webrtc/pkg/media/](https://github.com/pion/webrtc/tree/master/pkg/media):
