@@ -4,13 +4,14 @@ package t140packet
 import (
 	"encoding/binary"
 	"fmt"
+	"io"
 
 	"github.com/pion/rtp"
 )
 
 const (
 	payloadMaxSize = 128
-	rHeaderSize    = 4 // byte
+	rHeaderSize    = 4 // bytes
 	rHeaderMask    = 0x80
 	ptMask         = 0x7F
 
@@ -28,6 +29,8 @@ type T140Packet struct {
 	Header rtp.Header
 	IsRED  bool
 
+	Payload     []byte
+	PaddingSize byte
 	// RED
 	RHeaders []RBlockHeader
 
@@ -113,6 +116,8 @@ func (t *T140Packet) UnmarshalPayload(payload []byte) (err error) {
 	if err != nil {
 		return
 	}
+
+	copy(t.Payload, payload)
 
 	return
 }
@@ -225,4 +230,38 @@ func (p *T140Payloader) Payload(mtu uint16, payload []byte) (payloads [][]byte, 
 	payloads = [][]byte{out}
 
 	return
+}
+
+func (t T140Packet) Marshal() (buf []byte, err error) {
+	buf = make([]byte, t.MarshalSize())
+
+	n, err := t.MarshalTo(buf)
+	if err != nil {
+		return nil, err
+	}
+
+	return buf[:n], nil
+}
+
+func (t T140Packet) MarshalTo(buf []byte) (n int, err error) {
+	n, err = t.Header.MarshalTo(buf)
+	if err != nil {
+		return 0, err
+	}
+	// Make sure the buffer is large enough to hold the packet.
+	if n+len(t.Payload)+int(t.PaddingSize) > len(buf) {
+		return 0, io.ErrShortBuffer
+	}
+
+	m := copy(buf[n:], t.Payload)
+	if t.Header.Padding {
+		buf[n+m+int(t.PaddingSize-1)] = t.PaddingSize
+	}
+
+	return n + m + int(t.PaddingSize), nil
+}
+
+// MarshalSize returns the size of the packet once marshaled.
+func (p T140Packet) MarshalSize() int {
+	return p.Header.MarshalSize() + len(p.Payload) + int(p.PaddingSize)
 }
