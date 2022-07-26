@@ -275,3 +275,34 @@ func TestT140Payloader(t *testing.T) {
 		t.Errorf("TestT140Payloader max-size payload : got %#v of %T and %v\n, but want %#v of %T and %v", payloads[0], payloads[0], err, payload, payload, nil)
 	}
 }
+
+func TestToRTP(t *testing.T) {
+	var redPT uint8 = 101
+	rawPacket := []byte{
+		0x80, 0xe5, 0x69, 0x8f, //	---------
+		0xd9, 0xc2, 0x93, 0xda, // 	RTP Header
+		0x1c, 0x64, 0x27, 0x82, //	---------
+		0xe4, 0xff, 0x00, 0x0a, // "R" Block Header
+		0xe4, 0xff, 0x00, 0x0a, // "R" Block Header
+		0x64,                                                       // 0-flag and T140 PT
+		0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, // "R" data
+		0x64,                                                       // 0-flag and T140 PT
+		0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, // "R" data
+		0x48, 0x65, 0x6c, 0x6c, 0x6f, // "P" data
+	}
+	t140 := &T140Packet{}
+	_, _, err := t140.Unmarshal(rawPacket, redPT)
+	if err != nil {
+		panic(err)
+	}
+	r := t140.ToRTP()
+	if !reflect.DeepEqual(r.Header, t140.Header) {
+		t.Errorf("TestToRTP t140 and rtp Headers are not identical: got %#v, but expect %#v", r.Header, t140.Header)
+	}
+	if !reflect.DeepEqual(r.Payload, t140.Payload) {
+		t.Errorf("TestToRTP t140 and rtp Payload are not identical: got %#v, but expect %#v", r.Payload, t140.Payload)
+	}
+	if !reflect.DeepEqual(r.PaddingSize, t140.PaddingSize) {
+		t.Errorf("TestToRTP t140 and rtp PaddingSize are not identical: got %#v, but expect %#v", r.PaddingSize, t140.PaddingSize)
+	}
+}

@@ -232,6 +232,8 @@ func (p *T140Payloader) Payload(mtu uint16, payload []byte) (payloads [][]byte, 
 	return
 }
 
+// Marshal serializes the calling packet to a newly created slice of bytes.
+// Returns the serialized bytes and any occurred error.
 func (t T140Packet) Marshal() (buf []byte, err error) {
 	buf = make([]byte, t.MarshalSize())
 
@@ -243,6 +245,8 @@ func (t T140Packet) Marshal() (buf []byte, err error) {
 	return buf[:n], nil
 }
 
+// MarshalTo takes in a byte slice, marshals the calling packet into that slice.
+// Returns number of bytes being marshaled and any occurred error
 func (t T140Packet) MarshalTo(buf []byte) (n int, err error) {
 	n, err = t.Header.MarshalTo(buf)
 	if err != nil {
@@ -262,6 +266,18 @@ func (t T140Packet) MarshalTo(buf []byte) (n int, err error) {
 }
 
 // MarshalSize returns the size of the packet once marshaled.
-func (p T140Packet) MarshalSize() int {
-	return p.Header.MarshalSize() + len(p.Payload) + int(p.PaddingSize)
+func (t T140Packet) MarshalSize() int {
+	return t.Header.MarshalSize() + len(t.Payload) + int(t.PaddingSize)
+}
+
+// ToRTP returns an RTP packet based on the calling T140 packet
+func (t T140Packet) ToRTP() (r *rtp.Packet) {
+	r = &rtp.Packet{}
+	r.Header = t.Header.Clone()
+	if t.Payload != nil {
+		r.Payload = make([]byte, len(t.Payload))
+		copy(r.Payload, t.Payload)
+	}
+	r.PaddingSize = t.PaddingSize
+	return r
 }
