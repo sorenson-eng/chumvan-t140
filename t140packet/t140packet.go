@@ -207,6 +207,7 @@ func (t T140Packet) String() string {
 	s += fmt.Sprintf("\tP-block length: %d bytes\n", len(t.PBlock))
 	s += fmt.Sprintf("\tR-blocks quantity: %d\n", len(t.RBlocks))
 	s += fmt.Sprintf("\tR-blocks: %#v\n", t.RBlocks)
+	s += fmt.Sprintf("\tPayload: %#v\n", t.Payload)
 	return s
 }
 
