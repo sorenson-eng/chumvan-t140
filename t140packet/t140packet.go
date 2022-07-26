@@ -117,6 +117,7 @@ func (t *T140Packet) UnmarshalPayload(payload []byte) (err error) {
 		return
 	}
 
+	t.Payload = make([]byte, len(payload))
 	copy(t.Payload, payload)
 
 	return
@@ -195,7 +196,7 @@ func (t *T140Packet) unmarshalBlocks(payload []byte) (err error) {
 // String returns the string representation of the T140-payload RTP packet
 func (t T140Packet) String() string {
 	h := t.Header
-	s := "RTP T140 PACKET:\n"
+	s := "\tRTP T140 PACKET:\n"
 	s += fmt.Sprintf("\tVersion: %v\n", h.Version)
 	s += fmt.Sprintf("\tMarker: %v\n", h.Marker)
 	s += fmt.Sprintf("\tPayload Type: %d\n", h.PayloadType)
