@@ -101,7 +101,8 @@ func (t *T140Packet) UnmarshalPayload(payload []byte) (err error) {
 
 	// Simple return if only P-block is in a payload
 	if !t.IsRED {
-		t.PBlock = payload
+		t.PBlock = make([]byte, len(payload))
+		copy(t.PBlock, payload)
 		return
 	}
 
