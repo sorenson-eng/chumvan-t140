@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	payloadMaxSize = 128
+	payloadMaxSize = 1024
 	rHeaderSize    = 4 // bytes
 	rHeaderMask    = 0x80
 	ptMask         = 0x7F
@@ -220,13 +220,13 @@ type T140Payloader struct{}
 // Payload fragments a packet across one or more byte array.
 // In T140 packet, each being sent data is constrained to 1 packet.
 // The operation still return a 2-dimensional byte slice to conform with the interface.
-func (p *T140Payloader) Payload(mtu uint16, payload []byte) (payloads [][]byte, err error) {
+func (p *T140Payloader) Payload(mtu uint16, payload []byte) (payloads [][]byte) {
 	if payload == nil {
 		return
 	}
 
 	if len(payload) > payloadMaxSize {
-		return payloads, errTooLargePayload
+		panic(errTooLargePayload)
 	}
 
 	out := make([]byte, len(payload))

@@ -102,7 +102,7 @@ From the template of RTP header, the T140-specific setting can be listed as:
 
 There is no further instruction for the payload. The payload length is variable between packets and is not determined by any means from the header.
 
-Data (with or without redundancy) which is considered to be one sample, MUST fits into one packet to maintain the real-time characteristic. Therefore, in this implementation, the maximum value of a payload in a T140 packet is chosen to be 128 bytes.
+Data (with or without redundancy) which is considered to be one sample, MUST fits into one packet to maintain the real-time characteristic. Therefore, in this implementation, the maximum value of a payload in a T140 packet is chosen to be 1024 bytes.
 
 ## 3. Implementation
 All components in this package is referenced from the [pion/rtp](https://github.com/pion/rtp) and [webrtc/pkg/media/](https://github.com/pion/webrtc/tree/master/pkg/media):

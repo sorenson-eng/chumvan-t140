@@ -4,8 +4,6 @@ go 1.18
 
 require github.com/pion/rtp v1.7.13
 
-require github.com/shirou/gopsutil v3.21.11+incompatible // indirect
-
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/pion/randutil v0.1.0 // indirect
