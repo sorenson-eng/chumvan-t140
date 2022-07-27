@@ -198,7 +198,7 @@ func (t *T140Packet) unmarshalBlocks(payload []byte) (err error) {
 // String returns the string representation of the T140-payload RTP packet
 func (t T140Packet) String() string {
 	h := t.Header
-	s := "\tRTP T140 PACKET:\n"
+	s := "------RTP T140 PACKET------\n"
 	s += fmt.Sprintf("\tVersion: %v\n", h.Version)
 	s += fmt.Sprintf("\tMarker: %v\n", h.Marker)
 	s += fmt.Sprintf("\tPayload Type: %d\n", h.PayloadType)
@@ -225,8 +225,18 @@ func (p *T140Payloader) Payload(mtu uint16, payload []byte) (payloads [][]byte) 
 		return
 	}
 
-	if len(payload) > payloadMaxSize {
-		panic(errTooLargePayload)
+	var maxSize int
+	// Select the smaller value between mtu and
+	// the chosen value of T140 max payload size (in this implementation)
+	// to be the payloadMaxSize
+	if payloadMaxSize >= mtu {
+		maxSize = int(mtu)
+	} else {
+		maxSize = payloadMaxSize
+	}
+
+	if len(payload) > maxSize {
+		return nil
 	}
 
 	out := make([]byte, len(payload))

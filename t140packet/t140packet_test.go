@@ -188,7 +188,8 @@ func TestUnmarshal(t *testing.T) {
 			SSRC:           476325762,
 			CSRC:           []uint32{},
 		},
-		PBlock: rawPacket[12:],
+		PBlock:  rawPacket[12:],
+		Payload: rawPacket[12:],
 	}
 	if _, _, err := t140.Unmarshal(rawPacket, redPT); err != nil {
 		t.Error(err)
@@ -234,6 +235,7 @@ func TestUnmarshal(t *testing.T) {
 			BlockLength:     10,
 		},
 	}
+	marshalPacket.Payload = rawPacket[12:]
 	if _, _, err := t140.Unmarshal(rawPacket, redPT); err != nil {
 		t.Error(err)
 	} else if !reflect.DeepEqual(t140, marshalPacket) {
@@ -242,26 +244,26 @@ func TestUnmarshal(t *testing.T) {
 }
 
 func TestT140Payloader(t *testing.T) {
-	var mtu uint16 = 56
+	var mtu uint16 = 1500
 
 	// empty-payload
 	payload := []byte{}
 	p := &T140Payloader{}
-	payloads, err := p.Payload(mtu, payload)
-	if len(payloads[0]) != 0 || err != nil {
+	payloads := p.Payload(mtu, payload)
+	if len(payloads[0]) != 0 {
 		t.Errorf("TestT140Payloader empty payload should result in empty list of payloads: got %#v of length %d", payloads, len(payloads))
 	}
 
 	// Oversize payload
-	oversize := 129
+	oversize := 1501
 	payload = make([]byte, oversize)
 	for i := 0; i < oversize; i++ {
 		payload[i] = 0x01
 	}
 	p = &T140Payloader{}
-	payloads, err = p.Payload(mtu, payload)
-	if payloads != nil || err != errTooLargePayload {
-		t.Errorf("TestT140Payloader oversize payload should return empty array and errTooLargePayload - error: got %v and %v", payloads, err)
+	payloads = p.Payload(mtu, payload)
+	if payloads != nil {
+		t.Errorf("TestT140Payloader oversize payload should return empty array: got %v", payloads)
 	}
 
 	// valid payload
@@ -270,9 +272,9 @@ func TestT140Payloader(t *testing.T) {
 		payload[i] = 0x01
 	}
 	p = &T140Payloader{}
-	payloads, err = p.Payload(mtu, payload)
-	if err != nil || !reflect.DeepEqual(payloads[0], payload) {
-		t.Errorf("TestT140Payloader max-size payload : got %#v of %T and %v\n, but want %#v of %T and %v", payloads[0], payloads[0], err, payload, payload, nil)
+	payloads = p.Payload(mtu, payload)
+	if !reflect.DeepEqual(payloads[0], payload) {
+		t.Errorf("TestT140Payloader max-size payload : got %#v of %T \n, but want %#v of %T", payloads[0], payloads[0], payload, payload)
 	}
 }
 
