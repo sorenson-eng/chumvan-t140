@@ -82,7 +82,6 @@ func TestUnmarshalRHeaders(t *testing.T) {
 		0xE4, 0xFF, 0x00, 0x0A, // RHeader
 		0x64,                                                       // 0-flag and T140 PT
 		0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, // "R" data
-		0x64,                                                       // 0-flag and T140 PT
 		0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, // "R" data
 		0x01, 0x02, 0x03, 0x04, // "P" data
 	}
@@ -134,7 +133,6 @@ func TestUnmarshalBlocks(t *testing.T) {
 		0xE4, 0xFF, 0x00, 0x0A, // RHeader
 		0x64,                                                       // 0-flag and T140 PT
 		0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, // "R" data
-		0x64,                                                       // 0-flag and T140 PT
 		0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, // "R" data
 		0x01, 0x02, 0x03, 0x04, // "P" data
 	}
@@ -156,7 +154,7 @@ func TestUnmarshalBlocks(t *testing.T) {
 	if err := t140.unmarshalBlocks(payload); err != nil {
 		t.Error(err)
 	}
-	if !reflect.DeepEqual(t140.PBlock, payload[30:34]) {
+	if !reflect.DeepEqual(t140.PBlock, payload[29:33]) {
 		t.Errorf("TestUnmarshalBlocks incorrect unmarshal P block: got %#v, but expect: %#v", t140.PBlock, payload[30:34])
 	}
 	if !reflect.DeepEqual(t140.RBlocks, RBlocks) {
@@ -207,7 +205,6 @@ func TestUnmarshal(t *testing.T) {
 		0xe4, 0xff, 0x00, 0x0a, // "R" Block Header
 		0x64,                                                       // 0-flag and T140 PT
 		0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, // "R" data
-		0x64,                                                       // 0-flag and T140 PT
 		0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, // "R" data
 		0x48, 0x65, 0x6c, 0x6c, 0x6f, // "P" data
 	}
@@ -220,7 +217,7 @@ func TestUnmarshal(t *testing.T) {
 		},
 		{
 			PayloadType: t140PT,
-			Data:        rawPacket[32:42],
+			Data:        rawPacket[31:41],
 		},
 	}
 	marshalPacket.RHeaders = []RBlockHeader{
@@ -288,7 +285,6 @@ func TestToRTP(t *testing.T) {
 		0xe4, 0xff, 0x00, 0x0a, // "R" Block Header
 		0x64,                                                       // 0-flag and T140 PT
 		0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, // "R" data
-		0x64,                                                       // 0-flag and T140 PT
 		0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, // "R" data
 		0x48, 0x65, 0x6c, 0x6c, 0x6f, // "P" data
 	}
