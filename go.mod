@@ -1,4 +1,4 @@
-module github.com/chumvan/t140
+module github.com/sorenson-eng/chumvan-t140
 
 go 1.18
 
