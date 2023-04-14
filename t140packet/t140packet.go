@@ -176,16 +176,21 @@ func (t *T140Packet) UnmarshalRHeaders(payload []byte) (err error) {
 // Returns any occurred error
 func (t *T140Packet) unmarshalBlocks(payload []byte) (err error) {
 	var rLen int = len(t.RHeaders) * rHeaderSize
+	if !t.IsRED && len(t.RHeaders) > 0 {
+		//Has RHeaders, but IsRED flag not set
+		t.IsRED = true
+	}
+	if t.IsRED {
+		rLen = rLen + 1
+	}
 	rblocks := make([]RBlock, 0)
 	for _, r := range t.RHeaders {
-		if r.BlockLength != 0 {
-			rb := RBlock{
-				PayloadType: r.PayloadType,
-				Data:        payload[rLen+1 : rLen+1+int(r.BlockLength)],
-			}
-			rblocks = append(rblocks, rb)
-			rLen += int(1 + r.BlockLength)
+		rb := RBlock{
+			PayloadType: r.PayloadType,
+			Data:        payload[rLen : rLen+int(r.BlockLength)],
 		}
+		rblocks = append(rblocks, rb)
+		rLen += int(r.BlockLength)
 	}
 	t.RBlocks = make([]RBlock, len(t.RHeaders))
 	copy(t.RBlocks, rblocks)
@@ -193,6 +198,37 @@ func (t *T140Packet) unmarshalBlocks(payload []byte) (err error) {
 	t.PBlock = make([]byte, len(payload[rLen:]))
 	copy(t.PBlock, payload[rLen:])
 	return
+}
+
+func (t T140Packet) BuildPayload(t140PT uint8, redPT uint8) []byte {
+	if t.IsRED {
+		var outblock []byte
+		var nextByte byte
+		for i := 0; i < len(t.RHeaders); i++ {
+			nextByte = rHeaderMask | t.RHeaders[i].PayloadType //8 bits
+			outblock = append(outblock, nextByte)
+
+			nextByte = uint8(t.RHeaders[i].TimestampOffset >> 6 & 0xff) //8 of 14 bits
+			outblock = append(outblock, nextByte)
+
+			nextByte = uint8(t.RHeaders[i].TimestampOffset << 2 & 0xfc)     //6 of 14 bits
+			nextByte = nextByte | uint8(t.RHeaders[i].BlockLength>>14&0x03) //2 of 10 bits
+			outblock = append(outblock, nextByte)
+
+			nextByte = uint8(t.RHeaders[i].BlockLength & 0xff) //8 of 10 bits
+			outblock = append(outblock, nextByte)
+		}
+		nextByte = t140PT //8 bits
+		outblock = append(outblock, nextByte)
+		for i := 0; i < len(t.RBlocks); i++ {
+			outblock = append(outblock, t.RBlocks[i].Data...)
+		}
+		outblock = append(outblock, t.PBlock...)
+
+		return outblock
+	} else {
+		return t.PBlock
+	}
 }
 
 // String returns the string representation of the T140-payload RTP packet
@@ -214,7 +250,7 @@ func (t T140Packet) String() string {
 	return s
 }
 
-//T140Payloader payloads T140 packets
+// T140Payloader payloads T140 packets
 type T140Payloader struct{}
 
 // Payload fragments a packet across one or more byte array.
